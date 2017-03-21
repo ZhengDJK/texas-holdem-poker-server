@@ -12,6 +12,13 @@ public enum CardSuit {
         this.symbol = symbol;
     }
 
+    public static CardSuit fromString(String symbol){
+        if(symbol.equals("♠")) return SPADE;
+        else if(symbol.equals("♥")) return HEART;
+        else if(symbol.equals("♣")) return CLUB;
+        else return DIAMOND;
+    }
+
     @Override
     public String toString() {
         return symbol;

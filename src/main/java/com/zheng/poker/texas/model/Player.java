@@ -1,6 +1,7 @@
 package com.zheng.poker.texas.model;
 
 import com.zheng.poker.texas.model.cards.Card;
+import com.zheng.poker.texas.ui.Seat;
 import com.zheng.poker.texas.utils.MySocket;
 
 import java.io.IOException;
@@ -12,12 +13,14 @@ import java.util.List;
  * Created by zheng on 2016/11/24.
  */
 public class Player {
+    private int sleepTime=1000;
     private final int id;
     private final String name;
     private final MySocket socket;
     private int money;
     private int jetton=0;
     private List<Card> holeCards;
+    private Seat seat;
 
     public Player(Socket socket,int initialMoney,String name) throws IOException {
         this.name=name;
@@ -71,6 +74,7 @@ public class Player {
         }else {
             money -= amount;
         }
+        seat.updateLabel();
     }
 
     public void removeJetton(int amount){
@@ -78,18 +82,23 @@ public class Player {
             jetton=0;
         else
             jetton-=amount;
+        seat.updateLabel();
     }
 
     public void addMoney(int amount) {
         money += amount;
+        seat.updateLabel();
     }
     public void addJetton(int amount){
         jetton+=amount;
+        seat.updateLabel();
     }
 
     public void setHoleCards(Card hole1, Card hole2) {
+        seat.hideCards();
         holeCards = Arrays.asList(hole1, hole2);
         String msg="hold/\n"+hole1+"\n"+hole2+"\n/hold\n";
+        seat.showCards();
         sendMsg(msg);
     }
 
@@ -144,8 +153,25 @@ public class Player {
     private BettingMoney bettingMoneyFromString(String msg){
         String[] betting=msg.split(" ");
         if(betting.length==2){
-            return new BettingMoney(BettingDecision.RAISE,Integer.getInteger(betting[1]));
+            return new BettingMoney(BettingDecision.RAISE,Integer.parseInt(betting[1]));
         }
         return new BettingMoney(BettingDecision.getDecision(msg),0);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+
+    public Seat getSeat() {
+        return seat;
+    }
+
+    public void setSeat(Seat seat) {
+        this.seat = seat;
+    }
+
+    public String display(){
+        return "#"+name;
     }
 }

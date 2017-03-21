@@ -23,6 +23,17 @@ public enum CardNumber {
         this.power = power;
     }
 
+    public static CardNumber fromString(String symbol){
+        CardNumber cardNumber=null;
+        for(CardNumber number:CardNumber.values()){
+            if(symbol.equals(number.symbol)){
+                cardNumber=number;
+                break;
+            }
+        }
+        return cardNumber;
+    };
+
     @Override
     public String toString() {
         return symbol;

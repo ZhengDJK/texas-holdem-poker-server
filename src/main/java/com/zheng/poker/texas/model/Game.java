@@ -37,5 +37,12 @@ public class Game {
         return gameHands.size();
     }
 
+    public void sendMsgToAll(String msg){
+        for(Player player:players)
+            player.sendMsg(msg);
+    }
 
+    public List<GameHand> getGameHands() {
+        return gameHands;
+    }
 }

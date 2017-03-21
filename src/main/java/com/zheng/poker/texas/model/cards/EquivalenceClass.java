@@ -36,10 +36,10 @@ public abstract class EquivalenceClass {
 		if (getClass() != obj.getClass())
 			return false;
 		EquivalenceClass other = (EquivalenceClass) obj;
-		if (number1 != other.number1)
+		/*if (number1 != other.number1)
 			return false;
 		if (number2 != other.number2)
-			return false;
+			return false;*/
 		return (number1 == other.number1 && number2 == other.number2)
 				|| (number1 == other.number2 && number2 == other.number1);
 	}

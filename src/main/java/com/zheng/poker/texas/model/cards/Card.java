@@ -10,6 +10,11 @@ public class Card implements Comparable<Card> {
         this.number = number;
     }
 
+    public static Card fromString(String string){
+        return new Card(CardSuit.fromString(string.substring(0,1)),
+                CardNumber.fromString(string.substring(1)));
+    }
+
     @Override
     public String toString() {
         return suit.toString() + number.toString();
@@ -24,6 +29,11 @@ public class Card implements Comparable<Card> {
         Card other = (Card) obj;
 
         return suit.equals(other.suit) && number.equals(other.number);
+    }
+
+    @Override
+    public int hashCode(){
+        return number.getPower()*4+suit.ordinal();
     }
 
     

@@ -7,9 +7,14 @@ import java.util.Map;
  * Created by zheng on 2016/11/24.
  */
 public class BettingRound {
+    private final GameHand gameHand;
     private final Map<Player, Integer> playerBets = new HashMap<Player, Integer>();
     private final StringBuilder inquire=new StringBuilder();
     private int highestBet = 0;
+
+    public BettingRound(GameHand gameHand){
+        this.gameHand=gameHand;
+    }
 
     public Map<Player, Integer> getPlayerBets() {
         return playerBets;
@@ -30,6 +35,8 @@ public class BettingRound {
                 break;
             case FOLD:
                 insertInquire(player.getId()+" "+player.getJetton()+" "+player.getMoney()+" "+getBetForPlayer(player)+" fold\n");
+                gameHand.sendMsgToAll("action/\n"+player.getId()+" "+player.getJetton()+" "+player.getMoney()+" "+getBetForPlayer(player)+" fold "+highestBet+"\n/action");
+                player.getSeat().showAction("fold");
         }
 
         // Don't save context information for pre flop
@@ -68,11 +75,15 @@ public class BettingRound {
             playerBets.put(player, playerBet+player.getJetton());
             player.removeJetton(player.getJetton());
             insertInquire(player.getId()+" "+player.getJetton()+" "+player.getMoney()+" "+getBetForPlayer(player)+" all_in\n");
+            gameHand.sendMsgToAll("action/\n"+player.getId()+" "+player.getJetton()+" "+player.getMoney()+" "+getBetForPlayer(player)+" all_in "+highestBet+"\n/action");
+            player.getSeat().showAction("all_in");
         }
         else {
             player.removeJetton(bet - playerBet);
             playerBets.put(player, bet);
             insertInquire(player.getId()+" "+player.getJetton()+" "+player.getMoney()+" "+getBetForPlayer(player)+" "+bettingDecision+" \n");
+            gameHand.sendMsgToAll("action/\n"+player.getId()+" "+player.getJetton()+" "+player.getMoney()+" "+getBetForPlayer(player)+" "+bettingDecision+" "+highestBet+"\n/action");
+            player.getSeat().showAction(bettingDecision);
         }
 
 

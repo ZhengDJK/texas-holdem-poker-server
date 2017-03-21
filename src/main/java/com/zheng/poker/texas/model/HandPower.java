@@ -14,6 +14,17 @@ public class HandPower implements Comparable<HandPower> {
         this.tieBreakingInformation = tieBreakingInformation;
     }
 
+    public boolean equals(Object other){
+        return this.compareTo((HandPower) other)==0;
+    }
+
+    public int hashCode(){
+        int result=1;
+        result=31*result+handPowerType.getPower();
+        result=31*result+tieBreakingInformation.hashCode();
+        return result;
+    }
+
     public int compareTo(HandPower other) {
         int typeDifference = handPowerType.getPower()
                 - other.handPowerType.getPower();

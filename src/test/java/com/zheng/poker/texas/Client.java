@@ -16,6 +16,7 @@ public class Client
         try
         {
             Socket connectionToServer = new Socket("localhost", 8888);
+            System.out.println(connectionToServer.getLocalPort());
             DataInputStream inFromServer = new DataInputStream(connectionToServer.getInputStream());
             DataOutputStream outToServer = new DataOutputStream(connectionToServer.getOutputStream());
             System.out.println("input your name now:");

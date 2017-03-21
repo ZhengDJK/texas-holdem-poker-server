@@ -2,7 +2,10 @@ package com.zheng.poker.texas.model;
 
 import com.zheng.poker.texas.model.cards.Card;
 import com.zheng.poker.texas.model.cards.Deck;
+import com.zheng.poker.texas.ui.CardImage;
+import com.zheng.poker.texas.ui.Demo;
 import com.zheng.poker.texas.utils.MapList;
+import com.zheng.poker.texas.utils.Sleep;
 
 import java.io.IOException;
 import java.util.*;
@@ -13,14 +16,18 @@ public class GameHand {
     private final List<Card> sharedCards = new ArrayList<Card>();
     private final List<BettingRound> bettingRounds = new ArrayList<BettingRound>();
     private Boolean hasRemoved = true;
+    private final Demo demo;
+    private Game game;
 
-    public GameHand(List<Player> players) {
+    public GameHand(List<Player> players,Demo demo,Game game){
+        this.game=game;
         this.players = new LinkedList<Player>(players);
         deck = new Deck();
+        this.demo=demo;
     }
 
     public void nextRound() {
-        bettingRounds.add(new BettingRound());
+        bettingRounds.add(new BettingRound(this));
 
         if (getBettingRoundName().equals(BettingRoundName.PRE_FLOP)) {
             dealHoleCards();
@@ -29,6 +36,11 @@ public class GameHand {
         } else {
             dealSharedCard();
         }
+       // Sleep.sleep();
+        for (Player player:getPlayers()){
+            player.getSeat().hideAction();
+        }
+        Sleep.sleep();
     }
 
     public Player getNextPlayer() {
@@ -73,8 +85,10 @@ public class GameHand {
     }
 
     public void removeCurrentPlayer() {
-        players.removeFirst();
+        Player player=players.removeFirst();
+        //player.sendMsg("Game hand over");
         hasRemoved = true;
+        player.getSeat().ShowBackCard();
     }
 
     protected void dealHoleCards() {
@@ -83,34 +97,36 @@ public class GameHand {
             Card hole2 = deck.removeTopCard();
 
             player.setHoleCards(hole1, hole2);
+            Sleep.sleep(200);
         }
     }
 
     private void dealFlopCards() {
-        sharedCards.add(deck.removeTopCard());
-        sharedCards.add(deck.removeTopCard());
-        sharedCards.add(deck.removeTopCard());
         StringBuilder msg=new StringBuilder();
-        msg.append("flop/\n");
-        for(Card card:sharedCards)
-            msg.append(card+"\n");
-        msg.append("/flop\n");
-        for(Player player:players){
-            player.sendMsg(msg.toString());
+        msg.append("share/\n");
+        for(int i=0;i<3;i++){
+            Card card=deck.removeTopCard();
+            sharedCards.add(card);
+            demo.getTable().addCard(new CardImage(card));
+            msg.append(card + " ");
         }
+        /*sharedCards.add(deck.removeTopCard());
+        sharedCards.add(deck.removeTopCard());
+        sharedCards.add(deck.removeTopCard());*/
+        msg.append("\n/share");
+        sendMsgToAll(msg.toString());
     }
 
     private void dealSharedCard() {
         Card card=deck.removeTopCard();
         sharedCards.add(card);
+        demo.getTable().addCard(new CardImage(card));
         StringBuilder msg=new StringBuilder();
-        BettingRoundName bettingRoundName=getBettingRoundName();
-        msg.append(bettingRoundName+"/\n");
-        msg.append(card+"\n");
-        msg.append("/"+bettingRoundName+"\n");
-        for(Player player:players){
-           player.sendMsg(msg.toString());
-        }
+        //BettingRoundName bettingRoundName=getBettingRoundName();
+        msg.append("share/\n");
+        msg.append(card);
+        msg.append("\n/share");
+        sendMsgToAll(msg.toString());
     }
 
     public Deque<Player> getPlayers() {
@@ -127,17 +143,15 @@ public class GameHand {
         msg.append("seat/\n");
         int count=0;
         for(Player player:players){
-            if(count==0)
+            /*if(count==0)
                 msg.append("small blind: ");
             else if(count==1)
-                msg.append("big blind: ");
+                msg.append("big blind: ");*/
             msg.append(player.getId()+" "+player.getJetton()+" "+player.getMoney()+"\n");
             count++;
         }
-        msg.append("/seat\n");
-        for(Player player:players){
-            player.sendMsg(msg.toString());
-        }
+        msg.append("/seat");
+        sendMsgToAll(msg.toString());
     }
 
     public void applyDecision(Player player, BettingMoney bettingMoney) {
@@ -160,6 +174,11 @@ public class GameHand {
             }
         }
         return bets;
+    }
+
+    public void sendMsgToAll(String msg){
+        for (Player player:game.getPlayers())
+            player.sendMsg(msg);
     }
 
 }

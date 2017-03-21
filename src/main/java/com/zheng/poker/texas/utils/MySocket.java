@@ -36,4 +36,18 @@ public class MySocket {
         }
         return msg;
     }
+
+    public int getLocalPort(){
+        return socket.getLocalPort();
+    }
+
+    public void close(){
+        try {
+            in.close();
+            out.close();
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

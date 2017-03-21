@@ -4,26 +4,33 @@ package com.zheng.poker.texas.controller;
 import com.zheng.poker.texas.model.*;
 import com.zheng.poker.texas.model.cards.Card;
 import com.zheng.poker.texas.model.gameproperties.GameProperties;
+import com.zheng.poker.texas.ui.Demo;
+import com.zheng.poker.texas.utils.Logger;
 
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 
 public class GameHandController {
     private final HandPowerRanker handPowerRanker;
     private final GameProperties gameProperties;
+    private final Demo demo;
 
     public GameHandController(
                               final HandPowerRanker handPowerRanker,
                               final GameProperties gameProperties) {
         this.handPowerRanker = handPowerRanker;
         this.gameProperties = gameProperties;
+        this.demo=gameProperties.getDemo();
+    }
+
+    public Demo getDemo() {
+        return demo;
     }
 
     public void play(Game game) {
-        GameHand gameHand = createGameHand(game);
+        GameHand gameHand = createGameHand(game,demo);
         gameHand.sendSeatInfoMsg();
         Boolean haveWinner = false;
         while (!gameHand.getBettingRoundName().equals(
@@ -33,13 +40,14 @@ public class GameHandController {
         }
 
         if (!haveWinner) {
-            System.out.println("game#"+game.gameHandsCount());
+            Logger.log("game#" + game.gameHandsCount());
             showDown(gameHand);
         }
+        game.sendMsgToAll("Game hand over");
     }
 
-    private GameHand createGameHand(Game game) {
-        GameHand gameHand = new GameHand(game.getPlayers());
+    private GameHand createGameHand(Game game,Demo demo) {
+        GameHand gameHand = new GameHand(game.getPlayers(),demo,game);
         game.addGameHand(gameHand);
         return gameHand;
     }
@@ -57,7 +65,6 @@ public class GameHandController {
         while (toPlay > 0) {
             Player player = gameHand.getNextPlayer();
             BettingMoney bettingMoney=player.decide(gameHand);
-            System.out.println(player.toString()+" "+bettingMoney.getDecision());
 
 //            // We can't raise at second turn
 //            if (turn > numberOfPlayersAtBeginningOfRound
@@ -71,6 +78,7 @@ public class GameHandController {
             }
 
             applyDecision(gameHand, player, bettingMoney);
+            demo.getTable().updatePot(gameHand.getTotalBets());
             turn++;
             toPlay--;
         }
@@ -79,6 +87,7 @@ public class GameHandController {
         if (gameHand.getPlayersCount() == 1) {
             Player winner = gameHand.getCurrentPlayer();
             winner.addJetton(gameHand.getTotalBets());
+            gameHand.sendMsgToAll("winner/\n"+winner.getId()+" "+gameHand.getTotalBets()+"\n/winner");
             return true;
         }
         return false;
@@ -91,8 +100,10 @@ public class GameHandController {
 
         gameHand.getCurrentBettingRound().placeBet(smallBlindPlayer,
                 gameProperties.getSmallBlind(),"blind");
+        demo.getTable().updatePot(gameHand.getTotalBets());
         gameHand.getCurrentBettingRound().placeBet(bigBlindPlayer,
                 gameProperties.getBigBlind(),"blind");
+        demo.getTable().updatePot(gameHand.getTotalBets());
         StringBuilder msg=new StringBuilder();
         msg.append("blind/\n");
         msg.append(smallBlindPlayer.getId()+":"+gameProperties.getSmallBlind()+"\n");
@@ -114,7 +125,7 @@ public class GameHandController {
     }
 
     private List<Player> getWinners(GameHand gameHand,List<Player> players) {
-        Deque<Player> activePlayers = gameHand.getPlayers();
+        Deque<Player> activePlayers = new LinkedList<Player>(gameHand.getPlayers());
         activePlayers.retainAll(players);
         List<Card> sharedCards = gameHand.getSharedCards();
 
@@ -141,12 +152,22 @@ public class GameHandController {
 
     protected void showDown(GameHand gameHand) {
        // logger.log("--- Showdown");
+        StringBuilder showString=new StringBuilder();
+        showString.append("show/\n");
+        for(Player player:gameHand.getPlayers()){
+            showString.append(player.getId()+" "+player.getHoleCards().get(0)+" "+player.getHoleCards().get(1)+"\n");
+        }
+        showString.append("/show");
+        gameHand.sendMsgToAll(showString.toString());
         List<Pot> pots=Pot.getAllPot(gameHand.getAllPlayerBet());
         System.out.println(pots);
         for(Pot pot:pots){
             List<Player> winners=getWinners(gameHand,pot.getPlayers());
             for(Player winner:winners){
                 winner.addJetton(pot.getMoney()/winners.size());
+                gameHand.sendMsgToAll("winner/\n"+winner.getId()+" "+pot.getMoney()/winners.size()+"\n/winner");
+                demo.getTable().showWinner(winner,
+                        new ArrayList<Card>(gameHand.getSharedCards()),pot.getMoney()/winners.size());
             }
         }
         // Showdown

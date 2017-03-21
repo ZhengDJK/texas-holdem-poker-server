@@ -1,6 +1,9 @@
 package com.zheng.poker.texas.model.gameproperties;
 
 import com.zheng.poker.texas.model.Player;
+import com.zheng.poker.texas.model.cards.Deck;
+import com.zheng.poker.texas.ui.Demo;
+import com.zheng.poker.texas.ui.Seat;
 import com.zheng.poker.texas.utils.MySocket;
 
 import java.io.IOException;
@@ -17,6 +20,7 @@ public  class GameProperties {
     private final int numberOfHands;
     private final int numberOfPlayer;
     private final List<Player> players = new ArrayList<Player>();
+    private final Demo demo=new Demo();
 
     public GameProperties(){
         smallBlind=100;
@@ -24,12 +28,14 @@ public  class GameProperties {
         initialMoney=10000;
         numberOfHands=600;
         initialJetton=2000;
-        numberOfPlayer=3;
+        numberOfPlayer=8;
+
         try {
             register();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        sendPlayersMsg();
     }
 
     public int getSmallBlind() {
@@ -71,9 +77,35 @@ public  class GameProperties {
             MySocket mySocket=new MySocket(socket);
             String name=mySocket.getMsg();
             Player player=new Player(socket,getInitialMoney(),name);
+            if(getNumberOfPlayer()==2){
+                if(i==0)
+                    player.setSeat(demo.getTable().addSeat(player,2));
+                else
+                    player.setSeat(demo.getTable().addSeat(player,6));
+            }
+            else
+                player.setSeat(demo.getTable().addSeat(player,i));
             addPlayer(player);
-            mySocket.sendMsg(""+player.getId());
+            //mySocket.sendMsg(""+player.getId());
             System.out.println(player+" is connected!");
         }
+    }
+
+    private void sendPlayersMsg(){
+        StringBuilder playerString=new StringBuilder();
+        playerString.append("players/\n");
+        for(Player player:players){
+            playerString.append(player.getId()+" "
+                    +player.getName()+" "
+                    +player.getMoney()
+                    +" "+player.getJetton()+"\n");
+        }
+        playerString.append("/players");
+        for(Player player:players)
+            player.sendMsg(playerString.toString());
+    }
+
+    public Demo getDemo() {
+        return demo;
     }
 }
